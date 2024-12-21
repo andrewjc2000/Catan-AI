@@ -206,19 +206,19 @@ class catanGameView():
                 pygame.draw.circle(self.screen, pygame.Color('black'), (int(robberCoords.x), int(robber_y)), 12, 1)
                 break
 
-    def displayBottomBar(self):
-        pygame.draw.rect(self.screen, pygame.Color('black'), (38, 778, 922, 222))
-        pygame.draw.rect(self.screen, pygame.Color('white'), (40, 780, 920, 220))
+    def displayRightBar(self):
+        pygame.draw.rect(self.screen, pygame.Color('black'), (860, 0, 204, 800))
+        pygame.draw.rect(self.screen, pygame.Color('white'), (862, 2, 200, 796))
 
-        print([p.__dict__ for p in self.game.playerQueue.queue])
         current_player = [player for player in self.game.playerQueue.queue if not player.isAI][0]
         for index, resource in enumerate(self.resource_names):
             amount = current_player.resources[resource]
             resource_image = self.resource_image_map[resource]
-            left_x = 55 + index * (10 + self.resource_card_size[0])
-            self.screen.blit(resource_image, (left_x, 810, self.resource_card_size[0], self.resource_card_size[1]))
+            top_y = 10 + index * (self.resource_card_size[0] // 2)
+            self.screen.blit(resource_image, (900, top_y))
             number_text = self.font_diceRoll.render(str(amount), True, pygame.Color('black'))
-            self.screen.blit(number_text, (left_x + (self.resource_card_size[0] - number_text.get_width()) // 2, 782))
+            self.screen.blit(number_text, (864 + (36 - number_text.get_width()) // 2, top_y + 15))
+        pygame.draw.rect(self.screen, pygame.Color('white'), (900, 10 + len(self.resource_names) * (self.resource_card_size[0] // 2), self.resource_card_size[0], self.resource_card_size[1]))
 
     #Function to display the gameState board - use to display intermediate build screens
     #gameScreenState specifies which type of screen is to be shown
@@ -227,7 +227,7 @@ class catanGameView():
         self.displayInitialBoard()
         self.displayGameButtons()
         self.displayRobber()
-        self.displayBottomBar()
+        self.displayRightBar()
 
         #Loop through and display all existing buildings from players build graphs
         for player_i in list(self.game.playerQueue.queue): #Build Settlements and roads of each player
