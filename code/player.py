@@ -18,7 +18,7 @@ class player():
         self.settlementsLeft = 5
         self.roadsLeft = 15
         self.citiesLeft = 4
-        self.resources = {'ORE':5, 'BRICK':6, 'WHEAT':3, 'WOOD':6, 'SHEEP':3} #Dictionary that keeps track of resource amounts
+        self.resources = {'ORE':0, 'BRICK':4, 'WHEAT':2, 'WOOD':4, 'SHEEP': 2}
 
         self.knightsPlayed = 0
         self.largestArmyFlag = False
@@ -419,17 +419,18 @@ class player():
 
             #Player to select resource to trade
             resourceToTrade = ""
-            while (resourceToTrade not in self.resources.keys()):
-                resourceToTrade = input("Enter resource name to trade with bank:").upper()
+            while (resourceToTrade not in self.resources.keys()) and resourceToTrade.upper() != "CANCEL":
+                resourceToTrade = input("Enter resource name to trade with bank (CANCEL to cancel):").upper()
 
             #Player to select resource to receive - disallow receiving same resource as traded
             resourceToReceive = ""
-            while (resourceToReceive not in self.resources.keys()) or (resourceToReceive == resourceToTrade):
-                resourceToReceive = input("Enter resource name to receive from bank:").upper()
+            while ((resourceToReceive not in self.resources.keys()) or (resourceToReceive == resourceToTrade)) and resourceToReceive.upper() != "CANCEL":
+                resourceToReceive = input("Enter resource name to receive from bank (CANCEL to cancel):").upper()
 
             #Try and trade with Bank
             #Note: Ports and Error handling handled in trade with bank function
-            self.trade_with_bank(resourceToTrade, resourceToReceive) 
+            if resourceToTrade.upper() != "CANCEL" and resourceToReceive.upper() != "CANCEL":
+                self.trade_with_bank(resourceToTrade, resourceToReceive) 
             
             return
 
@@ -443,8 +444,10 @@ class player():
 
             #Disallow trading with self
             playerToTrade_name = ''
-            while (playerToTrade_name not in playerNames) or (playerToTrade_name == self.name):
-                playerToTrade_name = input("Enter name of another player to trade with:")
+            while ((playerToTrade_name not in playerNames) or (playerToTrade_name == self.name)) and playerToTrade_name.upper() != 'CANCEL':
+                playerToTrade_name = input("Enter name of another player to trade with (CANCEL to cancel):")
+            if playerToTrade_name.upper() == 'CANCEL':
+                return
 
             #Over write and store the target player object
             playerToTrade = None

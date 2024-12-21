@@ -4,6 +4,7 @@
 import pygame
 from hexTile import *
 from hexLib import *
+import sys
 
 pygame.init()
 
@@ -21,31 +22,64 @@ class catanGameView():
         self.font_ports = pygame.font.SysFont('cambria', 10)
 
         self.font_button = pygame.font.SysFont('cambria', 12)
-        self.font_diceRoll = pygame.font.SysFont('cambria', 25) #dice font
-        self.font_Robber = pygame.font.SysFont('arialblack', 50) #robber font
+        self.font_diceRoll = pygame.font.SysFont('cambria', 25)
 
-        return None
-
+        self.hex_tile_size = (160, 138.56406460551017)
+        self.dice_image_size = (50, 50)
+        self.resource_card_size = (100, 200)
+        self.resource_names = ['WOOD', 'BRICK', 'SHEEP', 'WHEAT', 'ORE']
+        tile_names = ['DESERT'] + self.resource_names
+        self.tile_image_map = {tile_name: pygame.transform.scale(pygame.image.load(f'../images/{tile_name.lower()}.png'), self.hex_tile_size) for tile_name in tile_names}
+        self.dice_images = [pygame.transform.scale(pygame.image.load(f'../images/dice{index}.png'), self.dice_image_size) for index in range(1, 7)]
+        self.resource_image_map = {resource_name: pygame.transform.scale(pygame.image.load(f'../images/Resource_{resource_name[0]}{resource_name[1:].lower()}.png'), self.resource_card_size) for resource_name in self.resource_names}
 
     #Function to display the initial board
     def displayInitialBoard(self):
         #Dictionary to store RGB Color values
-        colorDict_RGB = {"BRICK":(255,51,51), "ORE":(128, 128, 128), "WHEAT":(255,255,51), "WOOD":(0,153,0), "SHEEP":(51,255,51), "DESERT":(255,255,204)}
         pygame.draw.rect(self.screen, pygame.Color('royalblue2'), (0,0,self.board.width, self.board.height)) #blue background
 
         #Render each hexTile
         for hexTile in self.board.hexTileDict.values():
             hexTileCorners = polygon_corners(self.board.flat, hexTile.hex)
-
-            hexTileColor_rgb = colorDict_RGB[hexTile.resource.type]
-            pygame.draw.polygon(self.screen, pygame.Color(hexTileColor_rgb[0],hexTileColor_rgb[1], hexTileColor_rgb[2]), hexTileCorners, self.board.width==0)
-            #print(hexTile.index, hexTileCorners)
-
             hexTile.pixelCenter = hex_to_pixel(self.board.flat, hexTile.hex) #Get pixel center coordinates of hex
-            if(hexTile.resource.type != 'DESERT'): #skip desert text/number
-                resourceText = self.font_resource.render(str(hexTile.resource.type) + " (" +str(hexTile.resource.num) + ")", False, (0,0,0))
-                self.screen.blit(resourceText, (hexTile.pixelCenter.x -25, hexTile.pixelCenter.y)) #add text to hex
 
+            shrink_factor = 1.03
+            shrunken_corners = [
+                (
+                    hexTile.pixelCenter.x + (corner[0] - hexTile.pixelCenter.x) * shrink_factor,
+                    hexTile.pixelCenter.y + (corner[1] - hexTile.pixelCenter.y) * shrink_factor,
+                )
+                for corner in hexTileCorners
+            ]
+            pygame.draw.polygon(self.screen, pygame.Color('black'), shrunken_corners)
+
+            resource_image = self.tile_image_map.get(hexTile.resource.type)
+            if resource_image:
+                # Calculate the top-left position for blitting the image
+                top_left = (hexTile.pixelCenter.x - self.hex_tile_size[0] // 2,
+                            hexTile.pixelCenter.y - self.hex_tile_size[1] // 2)
+                self.screen.blit(resource_image, top_left)
+
+            if hexTile.resource.type != 'DESERT':
+                # Draw a white circle in the center
+                pygame.draw.circle(self.screen, pygame.Color('white'), (int(hexTile.pixelCenter.x), int(hexTile.pixelCenter.y)), 25)
+                # Determine the text color
+                text_color = pygame.Color('red') if hexTile.resource.num in [6, 8] else pygame.Color('black')
+
+                # Render the number text
+                number_text = self.font_diceRoll.render(str(hexTile.resource.num), True, text_color)
+                self.screen.blit(number_text, (hexTile.pixelCenter.x - number_text.get_width() // 2,
+                                            hexTile.pixelCenter.y - number_text.get_height() // 2 - 5))
+                dots_map = {6: 5, 8: 5, 5: 4, 9: 4, 4: 3, 10: 3, 2: 2, 11: 2, 3: 1, 12: 1}
+
+                num_dots = dots_map.get(hexTile.resource.num, 0)
+                dot_color = pygame.Color('red') if hexTile.resource.num in [6, 8] else pygame.Color('black')
+                dot_radius = 2
+                dot_spacing = 6
+                dot_start_x = hexTile.pixelCenter.x - (num_dots - 1) * dot_spacing / 2
+                dot_y = hexTile.pixelCenter.y + 10
+                for i in range(num_dots):
+                    pygame.draw.circle(self.screen, dot_color, (int(dot_start_x + i * dot_spacing), int(dot_y)), dot_radius)
 
         #Display the Ports - update images/formatting later
         for vCoord, vertexInfo in self.board.boardGraph.items():
@@ -160,20 +194,31 @@ class catanGameView():
 
         self.screen.blit(endTurnText,(30,710))
 
-
-
     #Function to display robber
     def displayRobber(self):
-        #Robber text
-        robberText = self.font_Robber.render("R", False, (0,0,0))
-        #Get the coordinates for the robber
         for hexTile in self.board.hexTileDict.values():
-            if(hexTile.robber):
+            if hexTile.robber:
                 robberCoords = hexTile.pixelCenter
+                robber_y = robberCoords.y - self.hex_tile_size[1] // 2 + 30
+                pygame.draw.circle(self.screen, pygame.Color('gray'), (int(robberCoords.x), int(robber_y)), 20)
+                pygame.draw.circle(self.screen, pygame.Color('black'), (int(robberCoords.x), int(robber_y)), 20, 1)
+                pygame.draw.circle(self.screen, pygame.Color('gray'), (int(robberCoords.x), int(robber_y)), 12)
+                pygame.draw.circle(self.screen, pygame.Color('black'), (int(robberCoords.x), int(robber_y)), 12, 1)
+                break
 
-        self.screen.blit(robberText, (int(robberCoords.x) -20, int(robberCoords.y)-35)) 
+    def displayBottomBar(self):
+        pygame.draw.rect(self.screen, pygame.Color('black'), (38, 778, 922, 222))
+        pygame.draw.rect(self.screen, pygame.Color('white'), (40, 780, 920, 220))
 
-
+        print([p.__dict__ for p in self.game.playerQueue.queue])
+        current_player = [player for player in self.game.playerQueue.queue if not player.isAI][0]
+        for index, resource in enumerate(self.resource_names):
+            amount = current_player.resources[resource]
+            resource_image = self.resource_image_map[resource]
+            left_x = 55 + index * (10 + self.resource_card_size[0])
+            self.screen.blit(resource_image, (left_x, 810, self.resource_card_size[0], self.resource_card_size[1]))
+            number_text = self.font_diceRoll.render(str(amount), True, pygame.Color('black'))
+            self.screen.blit(number_text, (left_x + (self.resource_card_size[0] - number_text.get_width()) // 2, 782))
 
     #Function to display the gameState board - use to display intermediate build screens
     #gameScreenState specifies which type of screen is to be shown
@@ -182,6 +227,7 @@ class catanGameView():
         self.displayInitialBoard()
         self.displayGameButtons()
         self.displayRobber()
+        self.displayBottomBar()
 
         #Loop through and display all existing buildings from players build graphs
         for player_i in list(self.game.playerQueue.queue): #Build Settlements and roads of each player
@@ -200,14 +246,11 @@ class catanGameView():
 
 
     #Function to display dice roll
-    def displayDiceRoll(self, diceNums):
-        #Reset blue background and show dice roll
-        pygame.draw.rect(self.screen, pygame.Color('royalblue2'), (100, 20, 50, 50)) #blue background
-        diceNum = self.font_diceRoll.render(str(diceNums), False, (0,0,0))
-        self.screen.blit(diceNum,(110, 20)) 
-        
+    def displayDiceRoll(self, dice1, dice2):
+        self.screen.blit(self.dice_images[dice1 - 1], (110, 20))
+        self.screen.blit(self.dice_images[dice2 - 1], (170, 20))
+        pygame.display.update()
         return None
-
     
     def buildRoad_display(self, currentPlayer, roadsPossibleDict):
         '''Function to control build-road action with display

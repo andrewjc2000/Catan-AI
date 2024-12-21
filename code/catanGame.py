@@ -51,18 +51,15 @@ class catanGame():
     def build_initial_settlements(self):
         #Initialize new players with names and colors
         playerColors = ['black', 'darkslateblue', 'magenta4', 'orange1']
-        for i in range(self.numPlayers -1):
-            playerNameInput = input("Enter Player {} name: ".format(i+1))
-            newPlayer = player(playerNameInput, playerColors[i])
-            self.playerQueue.put(newPlayer)
-
-        test_AI_player = heuristicAIPlayer('Random-Greedy-AI', playerColors[i+1]) #Add the AI Player last
-        test_AI_player.updateAI()
-        self.playerQueue.put(test_AI_player)
-
+        botNames = ['Louis', 'Gerald', 'Tony']
+        main_player_name = input("Enter your name: ")
+        self.playerQueue.put(player(main_player_name, playerColors[0]))
+        for i in range(self.numPlayers - 1):
+            test_AI_player = heuristicAIPlayer(botNames[i], playerColors[i + 1])
+            test_AI_player.updateAI()
+            self.playerQueue.put(test_AI_player)
         playerList = list(self.playerQueue.queue)
-
-        self.boardView.displayGameScreen() #display the initial gameScreen
+        self.boardView.displayGameScreen()
         print("Displaying Initial GAMESCREEN!")
 
         #Build Settlements and roads of each player forwards
@@ -147,12 +144,9 @@ class catanGame():
     def rollDice(self):
         dice_1 = np.random.randint(1,7)
         dice_2 = np.random.randint(1,7)
-        diceRoll = dice_1 + dice_2
-        print("Dice Roll = ", diceRoll, "{", dice_1, dice_2, "}")
-
-        self.boardView.displayDiceRoll(diceRoll)
-
-        return diceRoll
+        print("Dice Roll = ", dice_1 + dice_2, "{", dice_1, dice_2, "}")
+        self.boardView.displayDiceRoll(dice_1, dice_2)
+        return dice_1, dice_2
 
     #Function to update resources for all players
     def update_playerResources(self, diceRoll, currentPlayer):
@@ -275,9 +269,11 @@ class catanGame():
                     #TO-DO: Add option of AI Player playing a dev card prior to dice roll
                     if(currPlayer.isAI):
                         #Roll Dice
-                        diceNum = self.rollDice()
+                        dice1, dice2 = self.rollDice()
+                        pygame.time.delay(3000)
+                        self.boardView.displayDiceRoll(dice1, dice2)
                         diceRolled = True
-                        self.update_playerResources(diceNum, currPlayer)
+                        self.update_playerResources(dice1 + dice2, currPlayer)
 
                         currPlayer.move(self.board) #AI Player makes all its moves
                         #Check if AI player gets longest road/largest army and update Victory points
@@ -287,7 +283,7 @@ class catanGame():
                         
                         self.boardView.displayGameScreen()#Update back to original gamescreen
                         turnOver = True
-
+                        pygame.time.delay(2000)
                     else: #Game loop for human players
                         for e in pygame.event.get(): #Get player actions/in-game events
                             #print(e)
@@ -299,12 +295,12 @@ class catanGame():
                                 #Check if player rolled the dice
                                 if(self.boardView.rollDice_button.collidepoint(e.pos)):
                                     if(diceRolled == False): #Only roll dice once
-                                        diceNum = self.rollDice()
+                                        dice1, dice2 = self.rollDice()
                                         diceRolled = True
                                         
-                                        self.boardView.displayDiceRoll(diceNum)
+                                        self.boardView.displayDiceRoll(dice1, dice2)
                                         #Code to update player resources with diceNum
-                                        self.update_playerResources(diceNum, currPlayer)
+                                        self.update_playerResources(dice1 + dice2, currPlayer)
 
                                 #Check if player wants to build road
                                 if(self.boardView.buildRoad_button.collidepoint(e.pos)):

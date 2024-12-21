@@ -23,8 +23,9 @@ class catanBoard(hexTile, Vertex):
         self.boardGraph = {} #Dict to store the vertex objects with the pixelCoordinates as keys
 
         self.edgeLength = 80 #Specify for hex size
-        self.size = self.width, self.height = 1000, 800
-        self.flat = Layout(layout_flat, Point(self.edgeLength, self.edgeLength), Point(self.width/2, self.height/2)) #specify Layout
+        self.size = self.width, self.height = 1000, 900
+        top_offset = 380
+        self.flat = Layout(layout_flat, Point(self.edgeLength, self.edgeLength), Point(self.width / 2, top_offset))
 
         ##INITIALIZE BOARD##
         print("Initializing Catan Game Board...")
